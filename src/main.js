@@ -5,6 +5,12 @@ import App from './App'
 import BootstrapVue from 'bootstrap-vue/dist/bootstrap-vue.esm';
 import axios from 'axios';
 
+import Tutorklas from './components/Tutorklas.vue';
+import Login from './components/Login.vue';
+
+Vue.component('Tutorklas', Tutorklas);
+Vue.component('Login', Login);
+
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-vue/dist/bootstrap-vue.css';
 

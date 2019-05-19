@@ -1,27 +1,20 @@
 <template>
   <div id="app">
-   
     <Login/>
+    <Tutorklas/>
   </div>
 </template>
 
 <script>
-import Login from './components/Login.vue'
 export default {
-  name: 'App',
-  components: {
-    Login
-  }
+  name: 'App'
 }
 </script>
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+    padding-top: 60px;
+    background: linear-gradient(90deg, rgba(248,87,166,1) 0%, rgba(255,88,88,0.639093137254902) 100%);
+    height: 100vh
 }
 </style>
