@@ -1,7 +1,9 @@
 <template>
   <div id="app">
+    <Header/>
     <Login/>
     <Tutorklas/>
+    <Verplaatsen/>
   </div>
 </template>
 
@@ -13,8 +15,8 @@ export default {
 
 <style>
 #app {
-    padding-top: 60px;
-    background: linear-gradient(90deg, rgba(248,87,166,1) 0%, rgba(255,88,88,0.639093137254902) 100%);
-    height: 100vh
+    padding-top: 160px;
+    background-color:#EDEDED;
+    height: 200vh
 }
 </style>

@@ -1,19 +1,27 @@
 <template>
-    <section>
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <h1>{{apikey}}</h1>
-                    <h1>{{ teachername }}</h1>
-                    <!-- <div  class="tutorklassen">
+   <section class="tutorklas">
+       <div class="container">
+           <div class="row">
+               <div class="col-12">
+                    <div class="tutorklassen">
+
+                        <div class="titel">
+                            <h4>Tutorklassen</h4>
+                            <hr>
+                        </div>
+
+                        <div v-if="!apikey" class="warning">
+                                <h4>Log in voor de weergave van de tutorklassen</h4>
+                        </div>
+
                         <form>
-                            <div class="row">
+                            <div v-if="apikey" class="row">
                                 <div class="col-5">
                                     <div class="table-wrapper">
                                         <table class="table table-hover">
                                         <thead>
                                             <tr>
-                                                <th>test</th>
+                                                <th scope="col">{{ selectedValue + ' ' + '-'}} {{ docenten.voornaam + ' ' + docenten.achternaam }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -25,44 +33,23 @@
                                     </div>
                                 </div>
                                 <div class="col-4">
-                                    <select class="form-control"></select>
-                                </div>
-                            </div>
-                        </form>
-                         <form>
-                            <div class="row">
-                                <div class="col-5">
-                                    <div class="table-wrapper">
-                                        <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>{{ selectedValue }} - {{ docenten.voornaam }} {{ docenten.achternaam }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="(leerling, index) in leerlingen" :key="index">
-                                                <td @click="getStudent(leerling.voornaam, leerling.achternaam)">{{ leerling.voornaam }} {{ leerling.achternaam }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <select v-model="selectedValue" class="form-control" :onchange="getClassMates(this.selectedValue)">
-                                        <option disabled selected value> Selecteer een tutorgroep </option>
+                                   <select v-model="selectedValue" @change="getStudents" class="select-klas form-control">
+                                        <option> Selecteer een tutorgroep </option>
                                         <option v-for="(tutorklas, index) in tutorklassen" :key="index">{{ tutorklas.id }}</option>
                                     </select>
                                 </div>
                             </div>
                         </form>
-                    </div> -->
-                </div>
-            </div>
-        </div>
+
+                    </div>
+               </div>
+           </div>
+       </div>
     </section>
 </template>
 
 <script>
+import axios from 'axios';
 import { EventBus } from '../event-bus.js';
 
 export default {
@@ -70,126 +57,171 @@ export default {
     data ()
     {
         return {
-            URL_TUTORKLASSEN: '',
+            //props voor het ophalen van tutorklassen
+            URL_TUTORKLASSEN: 'http://localhost/api/tutorklassen/',
             apikey: '',
-            teachername: ''
+            teachername: '',
+
+            // props voor het ophalen van leerlingen en docent
+            URL_TUTORKLAS: 'http://localhost/api/tutorklas/',
+            tutorklassen: [],
+            docenten: [],
+            leerlingen: [],
+            selectedValue: 'Tutorgroep',
+
+            // props voor het laten zien van de naam in Verplaatsen.vue
+            leerlingVoornaam: '',
+            leerlingAchternaam: ''
         }
     },
     methods: {
         getTutorClass() {
-                const postdata = new FormData();
-                postdata.append('docent', this.teacherName)
-                postdata.append('apikey', this.apiKey)
+            
+            // zet data klaar om verzonden te worden
+            const postTutorData = new FormData();
+            postTutorData.append('docent', this.teachername);
+            postTutorData.append('apikey', this.apikey);
 
-                axios.post(this.URL_TUTORKLASSEN, postdata)
-                 .then((response) => {
-                    this.tutorklassen = response.data.tutorklassen;
+            // maak post request naar API
+            axios.post(this.URL_TUTORKLASSEN, postTutorData)
+                .then((response) => {   
+                this.tutorklassen = response.data.tutorklassen;
+                this.docent       = response.data;
+            
+                })
+            .catch(function (error) {
+                console.log(error);
+            }); 
 
-                    //console.log(this.tutorklassen);
-                 })
-                .catch(function (error) {
-                    console.log(error);
-                }); 
+
         },
+        getStudents() {
+            const postTutorClassData = new FormData();
+
+            postTutorClassData.append('docent', this.teachername);
+            postTutorClassData.append('apikey', this.apikey);
+            postTutorClassData.append('tutorgroep', this.selectedValue) // remove event and use selected value
+
+            axios.post(this.URL_TUTORKLAS, postTutorClassData).then(response => {
+                this.docenten = response.data.docent;
+                this.leerlingen = response.data.leerlingen;
+
+                //this.selectedValue = null; // why was this a string?
+            }).catch(function (error) {
+                console.log(error);
+            });
+        },
+        getStudent(voornaam, achternaam) {
+    
+            this.leerlingVoornaam = voornaam;
+            this.leerlingAchternaam = achternaam;
+
+            // stuur de props leerlingVoornaam en leerlingAchternaam naar de EventBus
+            EventBus.$emit('leerlingNaam', this.leerlingVoornaam + ' ' + this.leerlingAchternaam);
+        }
     },
     mounted()
     {
+        // Ophalen van de ApiKey prop doormiddel van een eventbus
         EventBus.$on('FormSubmitKey', apiKey => {
             this.apikey = apiKey;
         });
 
+        // Ophalen van de teachername prop doormiddel van een eventbus
         EventBus.$on('FormSubmitName', teacherName => {
             this.teachername = teacherName;
-        });
-
-        EventBus.$on('FormSubmitName', teacherName => {
-            this.teachername = teacherName;
-            console.log(`Oh, that's nice. It's gotten ${clickCount} clicks! :)`)
         });
     }
 }
 </script>
 
 <style lang="scss">
+
     .tutorklassen
     {
-        min-height: 500px;
+        min-height: 30vh;
 
         padding: 20px 20px;
 
         position: relative;
 
-        background-color: #EDEDED;
         margin: 10px 0px;
 
-        border-radius: 30px;
+        border-radius: 15px;
+        border: 2px solid #D9D9D9;
+        background-color: #FFFFFF;
 
-        box-shadow: 44px 25px 83px -38px rgba(184,178,184,1);
+        .titel
+        {
+            > h4 
+            {
+                font-weight: bold;
+                color: #4A4E51;
+            }
+        }
+
+        .warning
+        {
+            position: absolute;
+
+            top: 50%;
+            left: 50%;
+
+            transform: translate( -50%, -50% );
+
+            color: #4A4E51;
+        }
 
         > form 
         {
-            
-            .table-wrapper 
+            padding: 0px 20px;
+
+            .table-wrapper
             {
-                .table
+                height: 30vh;
+                overflow: auto;
+
+                border-radius: 15px;
+                border: 2px solid #D9D9D9;
+
+                &::-webkit-scrollbar
                 {
-                    border-collapse: collapse;
-                    border-radius: 20px;
-                    overflow: hidden;
+                    width: 5px; 
+                    height: 3px;
+                }
 
-                    margin: 0px;
+                &::-webkit-scrollbar-track
+                {
+                    width: 5px;
+                    background-color: transparent;
+                }
+                &::-webkit-scrollbar-thumb
+                {
+                    width: 5px;
+                    border-radius: 10px;
+                    background-color: rgb(4, 198, 94);
+                }
 
-                    box-shadow: 44px 25px 83px -38px rgba(184,178,184,1); 
-
+                .table 
+                {
+                
                     > thead
                     {
-                        background-color: #6C7AE0;
+                        background-color: #F7F7F7;
 
-                        color: #ffffff;
-
-                        width: 100%;
-
-                        text-align: center;
-
-                        > tr 
-                        {
-                            > th 
-                            {
-                                border-collapse:collapse;
-                                border: 0;  
-                            }
-                        }
+                        color: #4A4E51;
                     }
 
-                    > tbody
+                    > tbody 
                     {
-                        border-radius: 30px;
-
-                        text-align: center;
-
-                        width: 400px;
-
                         > tr 
                         {
-                            width: 400px;
-
-                            > td 
+                            &:hover 
                             {
-                                width: 400px;
+                                cursor: pointer;
 
-                                border-top: none; 
+                                background-color: rgba(4, 198, 94, 0.05);
                             }
-
-                            &:nth-child(odd)
-                            {
-                                background-color: #F8F6FF;
-                            }
-
-                            &:nth-child(even)
-                            {
-                                background-color: #FFFFFF;
-                            }
-                            
                         }
                     }
                 }
